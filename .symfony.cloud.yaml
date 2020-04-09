@@ -1,15 +1,15 @@
 name: app
 
-type: php:7.4
+type: php:7.3
 
 runtime:
     extensions:
+        - pdo_pgsql
         - apcu
         - mbstring
         - sodium
         - ctype
         - iconv
-        - pdo_pgsql
 
 build:
     flavor: none
