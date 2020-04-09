@@ -9,7 +9,6 @@ runtime:
         - sodium
         - ctype
         - iconv
-        
 
 build:
     flavor: none
