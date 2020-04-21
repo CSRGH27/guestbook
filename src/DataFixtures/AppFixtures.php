@@ -36,6 +36,7 @@ class AppFixtures extends Fixture
             $conference->setCity($faker->city);
             $conference->setYear($faker->year);
             $conference->setIsInternational(rand(0, 1));
+            $conference->setSlug(strtolower($conference->getCity()));
 
             $manager->persist($conference);
 
