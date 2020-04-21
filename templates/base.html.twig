@@ -8,22 +8,21 @@
 		</title>
 		{% block stylesheets %}{% endblock %}
 	</head>
-	<header>
-		<h1>
-			<a href="{{path('homepage') }}">GuestBook</a>
-		</h1>
-		<ul>
-			{% for conference in conferences %}
-				<li>
-					<a href="{{ path('conference', { slug: conference.slug }) }}">{{ conference }}</a>
-
-				</li>
-			{% endfor %}
-		</ul>
-		<hr>
-	</header>
-
 	<body>
+		<header>
+			<h1>
+				<a href="{{path('homepage') }}">GuestBook</a>
+			</h1>
+			<ul>
+				{% for conference in conferences %}
+					<li>
+						<a href="{{ path('conference', { slug: conference.slug }) }}">{{ conference }}</a>
+
+					</li>
+				{% endfor %}
+			</ul>
+			<hr>
+		</header>
 		{% block body %}{% endblock %}
 		{% block javascripts %}{% endblock %}
 	</body>
