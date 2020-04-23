@@ -21,11 +21,13 @@ class ConferenceController extends AbstractController
 {
     private $twig;
     private $em;
+    private $akismetKey;
 
-    public function __construct(Environment $twig, EntityManagerInterface $em)
+    public function __construct(Environment $twig, EntityManagerInterface $em, string $akismetKey)
     {
         $this->twig = $twig;
         $this->em = $em;
+        $this->akismetKey = $akismetKey;
     }
 
     /**
@@ -33,6 +35,8 @@ class ConferenceController extends AbstractController
      */
     public function index(ConferenceRepository $conferenceRepository)
     {
+
+        dump($this->akismetKey);
         return new Response($this->twig->render('conference/index.html.twig', [
             'conferences' => $conferenceRepository->findAll(),
         ]));
@@ -67,7 +71,7 @@ class ConferenceController extends AbstractController
                 'permalink' => $request->getUri(),
             ];
             if (2 === $spamChecker->getSpamScore($comment, $context)) {
-                # code...
+                throw new \RuntimeException('Blatant spam, go away!');
             }
             $this->em->flush();
 
@@ -78,6 +82,7 @@ class ConferenceController extends AbstractController
 
         $offset = max(0, $request->query->getInt('offset', 0));
         $paginator = $commentRepository->getCommentPaginator($conference, $offset);
+
 
         return new Response($this->twig->render('conference/show.html.twig', [
             'conference' => $conference,

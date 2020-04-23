@@ -11,10 +11,10 @@ class SpamChecker
     private $endpoint;
     private $akismetKey = 'a5e35ae317d0';
 
-    public function __construct(HttpClientInterface $client)
+    public function __construct(HttpClientInterface $client, string $akismetKey)
     {
         $this->client = $client;
-        $this->endpoint = sprintf('https://%s.rest.akismet.com/1.1/comment-check', $this->akismetKey);
+        $this->endpoint = sprintf('https://%s.rest.akismet.com/1.1/comment-check', $akismetKey);
     }
 
     /**
@@ -24,6 +24,7 @@ class SpamChecker
      */
     public function getSpamScore(Comment $comment, array $context): int
     {
+        dump($this->endpoint);
         $response = $this->client->request('POST', $this->endpoint, [
             'body' => array_merge($context, [
                 'blog' => 'https://guestbook.example.com',
