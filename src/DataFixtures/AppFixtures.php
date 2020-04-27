@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Admin;
 use App\Entity\Comment;
 use App\Entity\Conference;
 use App\Entity\Customer;
@@ -10,6 +11,7 @@ use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\Persistence\ObjectManager;
 use Faker\Factory;
+use Symfony\Component\Security\Core\Encoder\EncoderFactoryInterface;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 class AppFixtures extends Fixture
@@ -20,38 +22,41 @@ class AppFixtures extends Fixture
      *
      * @var UserPasswordEncoderInterface
      */
-    private $encoder;
+    private $encoderFactory;
 
-    public function __construct(UserPasswordEncoderInterface $encoder)
+    public function __construct(EncoderFactoryInterface $encoderFactory)
     {
-        $this->encoder = $encoder;
+        $this->encoderFactory = $encoderFactory;
     }
 
     public function load(ObjectManager $manager)
     {
-        $faker = Factory::create('fr_FR');
+        $amsterdam = new Conference();
+        $amsterdam->setCity('Amsterdam');
+        $amsterdam->setYear('2019');
+        $amsterdam->setIsInternational(true);
+        $manager->persist($amsterdam);
 
-        for ($u = 0; $u < 25; $u++) {
-            $conference = new Conference;
-            $conference->setCity($faker->city);
-            $conference->setYear($faker->year);
-            $conference->setIsInternational(rand(0, 1));
-            $conference->setSlug(strtolower($conference->getCity()));
+        $paris = new Conference();
+        $paris->setCity('Paris');
+        $paris->setYear('2020');
+        $paris->setIsInternational(false);
+        $manager->persist($paris);
 
-            $manager->persist($conference);
 
-            for ($i = 0; $i < 7; $i++) {
-                $comment = new Comment;
-                $comment->setAuthor($faker->name);
-                $comment->setEmail($faker->email);
-                $comment->setCreatedAt($faker->dateTime());
-                $comment->setText($faker->realText($maxNbChars = 200, $indexSize = 2));
-                $comment->setPhotoFilename($faker->imageUrl(640, 480, 'transport'));
-                $comment->setConference($conference);
+        $comment1 = new Comment();
+        $comment1->setConference($amsterdam);
+        $comment1->setAuthor('Fabien');
+        $comment1->setEmail('fabien@example.com');
+        $comment1->setText('This was a great conference.');
+        $manager->persist($comment1);
 
-                $manager->persist($comment);
-            }
-        }
+        $admin = new Admin;
+        $admin->setRoles(['ROLE_ADMIN']);
+        $admin->setUsername('admin');
+        $admin->setPassword($this->encoderFactory->getEncoder(Admin::class)->encodePassword('admin', null));
+
+
         $manager->flush();
     }
 }
