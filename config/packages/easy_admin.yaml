@@ -26,9 +26,5 @@ easy_admin:
                     - { property: "email", type: "email" }
                     - { property: "conference" }
                     - text
-                    - {
-                          property: "createdAt",
-                          type: datetime,
-                          type_options: { attr: { readonly: true } },
-                      }
+                    - { property: "createdAt", type: datetime, type_options: { attr: { readonly: true } },}
                     - state

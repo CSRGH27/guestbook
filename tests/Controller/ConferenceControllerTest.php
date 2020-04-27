@@ -2,6 +2,8 @@
 
 namespace App\Tests\Controller;
 
+use App\Repository\CommentRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 
@@ -28,14 +30,19 @@ class ConferenceControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request('GET', '/conference/amsterdam-2019');
         $client->submitForm('Submit', [
-            'comment_form[author]' => 'Paul',
+            'comment_form[author]' => 'Fabien',
             'comment_form[text]' => 'Some feedback from an automated functional test',
-            'comment_form[email]' => 'me@automat.fr',
+            'comment_form[email]' => $email = 'me@automat.fr',
             'comment_form[photoFilename]' => dirname(__DIR__, 2) . '/public/images/under-construction.gif',
         ]);
+
         $this->assertResponseRedirects();
+        // TODO Simulation de la validation d'un commentaire  Self::Container->get permet d'acceder a n'importe quelle service qund on est dans un test unitaire php
+        $comment = self::$container->get(CommentRepository::class)->findOneByEmail($email);
+        $comment->setState('published');
+        self::$container->get(EntityManagerInterface::class)->flush();
         $client->followRedirect();
-        $this->assertSelectorExists('h4:contains("Paul")');
+        $this->assertSelectorExists('h4:contains("Fabien")');
     }
 
     /**

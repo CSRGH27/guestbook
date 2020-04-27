@@ -6,6 +6,7 @@ use App\Entity\Comment;
 use Twig\Environment;
 use App\Entity\Conference;
 use App\Form\CommentFormType;
+use App\Message\CommentMessage;
 use App\Repository\CommentRepository;
 use App\Repository\ConferenceRepository;
 use Doctrine\ORM\EntityManager;
@@ -16,18 +17,20 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\Messenger\MessageBus;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class ConferenceController extends AbstractController
 {
     private $twig;
     private $em;
-    private $akismetKey;
+    private $bus;
 
-    public function __construct(Environment $twig, EntityManagerInterface $em, string $akismetKey)
+    public function __construct(Environment $twig, EntityManagerInterface $em, MessageBusInterface $bus)
     {
         $this->twig = $twig;
         $this->em = $em;
-        $this->akismetKey = $akismetKey;
+        $this->bus = $bus;
     }
 
     /**
@@ -35,8 +38,6 @@ class ConferenceController extends AbstractController
      */
     public function index(ConferenceRepository $conferenceRepository)
     {
-
-        dump($this->akismetKey);
         return new Response($this->twig->render('conference/index.html.twig', [
             'conferences' => $conferenceRepository->findAll(),
         ]));
@@ -45,7 +46,7 @@ class ConferenceController extends AbstractController
     /**
      * @Route("/conference/{slug}", name="conference")
      */
-    public function show(Request $request, Conference $conference, CommentRepository $commentRepository, SpamChecker $spamChecker, string $photoDir)
+    public function show(Request $request, Conference $conference, CommentRepository $commentRepository, string $photoDir)
     {
         $comment = new Comment();
         $form = $this->createForm(CommentFormType::class, $comment);
@@ -70,10 +71,9 @@ class ConferenceController extends AbstractController
                 'referrer' => $request->headers->get('referer'),
                 'permalink' => $request->getUri(),
             ];
-            if (2 === $spamChecker->getSpamScore($comment, $context)) {
-                throw new \RuntimeException('Blatant spam, go away!');
-            }
+
             $this->em->flush();
+            $this->bus->dispatch((new CommentMessage($comment->getId(), $context)));
 
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
         }
