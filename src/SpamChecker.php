@@ -9,7 +9,6 @@ class SpamChecker
 {
     private $client;
     private $endpoint;
-    private $akismetKey = 'a5e35ae317d0';
 
     public function __construct(HttpClientInterface $client, string $akismetKey)
     {
