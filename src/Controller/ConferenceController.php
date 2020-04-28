@@ -73,6 +73,8 @@ class ConferenceController extends AbstractController
             ];
 
             $this->em->flush();
+
+            //TODO ici on appelle on appel le spam checker
             $this->bus->dispatch((new CommentMessage($comment->getId(), $context)));
 
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);

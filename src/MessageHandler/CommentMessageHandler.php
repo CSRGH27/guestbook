@@ -1,5 +1,7 @@
 <?php
 
+namespace App\MessageHandler;
+
 use App\Message\CommentMessage;
 use App\Repository\CommentRepository;
 use App\SpamChecker;
@@ -20,6 +22,7 @@ class CommentMessageHandler implements MessageHandlerInterface
         $this->spamChecker = $spamChecker;
         $this->commentRepository = $commentRepository;
     }
+
     public function __invoke(CommentMessage $message)
     {
         $comment = $this->commentRepository->find($message->getId());
