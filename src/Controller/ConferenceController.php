@@ -3,33 +3,30 @@
 namespace App\Controller;
 
 use App\Entity\Comment;
-use Twig\Environment;
 use App\Entity\Conference;
 use App\Form\CommentFormType;
 use App\Message\CommentMessage;
 use App\Repository\CommentRepository;
 use App\Repository\ConferenceRepository;
-use Doctrine\ORM\EntityManager;
-use App\SpamChecker;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
-use Symfony\Component\Messenger\MessageBus;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Routing\Annotation\Route;
+use Twig\Environment;
 
 class ConferenceController extends AbstractController
 {
     private $twig;
-    private $em;
+    private $entityManager;
     private $bus;
 
-    public function __construct(Environment $twig, EntityManagerInterface $em, MessageBusInterface $bus)
+    public function __construct(Environment $twig, EntityManagerInterface $entityManager, MessageBusInterface $bus)
     {
         $this->twig = $twig;
-        $this->em = $em;
+        $this->entityManager = $entityManager;
         $this->bus = $bus;
     }
 
@@ -58,13 +55,14 @@ class ConferenceController extends AbstractController
                 try {
                     $photo->move($photoDir, $filename);
                 } catch (FileException $e) {
-                    // unable to uplaod photo, give up
+                    // unable to upload the photo, give up
                 }
                 $comment->setPhotoFilename($filename);
             }
 
+            $this->entityManager->persist($comment);
+            $this->entityManager->flush();
 
-            $this->em->persist($comment);
             $context = [
                 'user_ip' => $request->getClientIp(),
                 'user_agent' => $request->headers->get('user-agent'),
@@ -72,19 +70,13 @@ class ConferenceController extends AbstractController
                 'permalink' => $request->getUri(),
             ];
 
-            $this->em->flush();
-
-            //TODO ici on appelle on appel le spam checker
-            $this->bus->dispatch((new CommentMessage($comment->getId(), $context)));
+            $this->bus->dispatch(new CommentMessage($comment->getId(), $context));
 
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
         }
 
-
-
         $offset = max(0, $request->query->getInt('offset', 0));
         $paginator = $commentRepository->getCommentPaginator($conference, $offset);
-
 
         return new Response($this->twig->render('conference/show.html.twig', [
             'conference' => $conference,
@@ -92,7 +84,6 @@ class ConferenceController extends AbstractController
             'previous' => $offset - CommentRepository::PAGINATOR_PER_PAGE,
             'next' => min(count($paginator), $offset + CommentRepository::PAGINATOR_PER_PAGE),
             'comment_form' => $form->createView(),
-
         ]));
     }
 }
