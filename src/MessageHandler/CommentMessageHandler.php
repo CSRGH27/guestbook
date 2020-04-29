@@ -20,16 +20,9 @@ class CommentMessageHandler implements MessageHandlerInterface
     private $workflow;
     private $logger;
 
-
-    public function __construct(
-        EntityManagerInterface $em,
-        SpamChecker $spamChecker,
-        CommentRepository $commentRepository,
-        MessageBusInterface $bus,
-        WorkflowInterface $commentStateMachine,
-        LoggerInterface $logger = null
-    ) {
-        $this->em = $em;
+    public function __construct(EntityManagerInterface $entityManager, SpamChecker $spamChecker, CommentRepository $commentRepository, MessageBusInterface $bus, WorkflowInterface $commentStateMachine, LoggerInterface $logger = null)
+    {
+        $this->entityManager = $entityManager;
         $this->spamChecker = $spamChecker;
         $this->commentRepository = $commentRepository;
         $this->bus = $bus;
@@ -39,29 +32,28 @@ class CommentMessageHandler implements MessageHandlerInterface
 
     public function __invoke(CommentMessage $message)
     {
-        dump('test');
         $comment = $this->commentRepository->find($message->getId());
         if (!$comment) {
             return;
         }
+
+
         if ($this->workflow->can($comment, 'accept')) {
             $score = $this->spamChecker->getSpamScore($comment, $message->getContext());
-            dump($score);
             $transition = 'accept';
             if (2 === $score) {
-                $transition = "reject_spam";
+                $transition = 'reject_spam';
             } elseif (1 === $score) {
-                $transition = "might_be_spam";
+                $transition = 'might_be_spam';
             }
             $this->workflow->apply($comment, $transition);
-            $this->em->flush();
-            $this->bus->dispatch(($message));
-        } elseif ($this->workflow->can($comment, 'publish') || $this->workflow->can($comment, 'publish_ham')) {
+            $this->entityManager->flush();
 
+            $this->bus->dispatch($message);
+        } elseif ($this->workflow->can($comment, 'publish') || $this->workflow->can($comment, 'publish_ham')) {
             $this->workflow->apply($comment, $this->workflow->can($comment, 'publish') ? 'publish' : 'publish_ham');
             $this->entityManager->flush();
         } elseif ($this->logger) {
-
             $this->logger->debug('Dropping comment message', ['comment' => $comment->getId(), 'state' => $comment->getState()]);
         }
     }
