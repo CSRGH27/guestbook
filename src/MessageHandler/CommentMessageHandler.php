@@ -43,7 +43,6 @@ class CommentMessageHandler implements MessageHandlerInterface
             return;
         }
 
-
         if ($this->workflow->can($comment, 'accept')) {
             $score = $this->spamChecker->getSpamScore($comment, $message->getContext());
             $transition = 'accept';

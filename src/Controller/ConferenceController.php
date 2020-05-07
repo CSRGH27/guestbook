@@ -59,7 +59,6 @@ class ConferenceController extends AbstractController
                 }
                 $comment->setPhotoFilename($filename);
             }
-
             $this->entityManager->persist($comment);
             $this->entityManager->flush();
 
